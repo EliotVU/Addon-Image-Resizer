@@ -1,9 +1,26 @@
-// imageResizer.js - Netliot's module
-// author:          Eliot van Uytfanghe
-// site:            EliotVU.com
-// published:       15 February 2012
-// 1.1 update:      27 February 2012
-// 1.2 update:      24 July 2012
+//==============================================================================
+//    This file is part of Image Resizer/Scaler.
+//
+//    Image Resizer/Scaler is free software: you can redistribute it and/or modify
+//    it under the terms of the GNU Lesser General Public License as published by
+//    the Free Software Foundation, either version 3 of the License, or
+//    (at your option) any later version.
+//
+//    Image Resizer/Scaler is distributed in the hope that it will be useful,
+//    but WITHOUT ANY WARRANTY; without even the implied warranty of
+//    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//    GNU Lesser General Public License for more details.
+//
+//    You should have received a copy of the GNU Lesser General Public License
+//    along with Image Resizer/Scaler.  If not, see <http://www.gnu.org/licenses/>.
+//==============================================================================
+//    Author: Eliot van Uytfanghe
+//    Site: EliotVU.com
+//==============================================================================
+
+//    Published: 15 February 2012
+//    1.1 Update: 27 February 2012
+//    1.2 Update: 24 July 2012
 
 if( typeof(com) == "undefined" )
     var com = {};
