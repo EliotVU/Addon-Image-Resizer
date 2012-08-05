@@ -1,9 +1,27 @@
 {
-    "name": "Image Resizer",
+    "name": "image-resizer",
     "license": "LGPL 3.0",
     "author": "Eliot van Uytfanghe",
     "version": "1.2",
     "fullName": "Image Resizer/Scaler",
     "id": "jid1-AZU1Zy4gkBNLlQ",
-    "description": "Resize/Scale any image on the web by dragging at the image!"
+    "description": "Resize/Scale any image on the web by dragging at the image!",
+
+    "preferences":
+    [
+        {
+            "name": "mouseDragButton",
+            "title": "Use RMB",
+            "description": "Whether RMB(Right Mouse Button) is the button used to resize images",
+            "type": "bool",
+            "value": true
+        },
+        {
+            "name": "showHoverMessage",
+            "title": "Display Image Tooltip",
+            "description": "Whether to show the resizing tooltip on images",
+            "type": "bool",
+            "value": true
+        }
+    ]
 }

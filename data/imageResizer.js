@@ -28,18 +28,20 @@ if( typeof(com) == "undefined" )
 if( !com.eliot )
     com.eliot = {};
 
+// TBH: This code is a huge mess of logic LOL.
 com.eliot.imageResizer = {
-    __exposedProps_: {
-        clickPosX: 0.0,
-        clickPosY: 0.0,
-        orgScalingX: 0.0,
-        orgScalingY: 0.0,
-        scaling: false,
-        scalingImage: null,
-        restoredImage: null,
-        moved: false,
-        suppressContextMenu: false
-    },
+    clickPosX: 0.0,
+    clickPosY: 0.0,
+    orgScalingX: 0.0,
+    orgScalingY: 0.0,
+    scaling: false,
+    scalingImage: null,
+    restoredImage: null,
+    moved: false,
+    suppressContextMenu: false,
+    dragKey: 3,     // Right mouse button.
+    restoreKey: 3,  // Right mouse button.
+    addHint: true,
 
     isControl: function(e){
         return e.ctrlKey || (e.metaKey != null && e.metaKey);
@@ -50,11 +52,11 @@ com.eliot.imageResizer = {
     },
 
     isDragKey: function(e){
-        return e.which == 3;    // Right mouse button.
+        return e.which == this.dragKey;
     },
 
-    getEvent: function(e){
-        return e ? e : window.event;
+    isRestoreKey: function(e){
+        return e.which == this.restoreKey;
     },
 
     cancelEvent: function(e){
@@ -75,7 +77,6 @@ com.eliot.imageResizer = {
     // Simple cancel the contextMenu, either if we hover out of a image's bounds while draggin,
     // - or right click was performed as size restoration.
     contextMenu: function(e){
-    	e = this.getEvent(e);
 		if( this.isDisabled(e) || !this.suppressContextMenu ){
 			return true;
 		}
@@ -88,16 +89,14 @@ com.eliot.imageResizer = {
 
     // Whether the image supports rescaling.
     validImage: function(img){
-        if( img.width() > 32 && img.height() > 32 && !img.hasClass('no-resize') ){
-            return true;
-        }
-        return false;
+        return img.width() > 32 && img.height() > 32 && !img.hasClass('no-resize');
     },
 
     // Start dragging if mouseDown is on a image bounds.
     mouseDown: function(e){
-        e = this.getEvent(e);
-        if( e.target.imageResizerAnimating || (this.isDisabled(e) && e.which != 2) ){return true;}
+        if( e.target.imageResizerAnimating || (this.isDisabled(e) && e.which != 2) ){
+            return true;
+        }
 
         var img = $(e.target);
         if( !img.is('img') || !this.validImage(img) ){
@@ -125,12 +124,19 @@ com.eliot.imageResizer = {
                 return false;
             }
         }
+        // If dragging is bound on LMB, then we'll still use RMB as restore functionality.
+        else if( e.which == 3 && this.dragKey == 1 ){
+            // @HACK: SIM scaling
+            this.startScaling(img);
+            this.scaling = false;
+            this.cancelEvent(e);
+            return false;
+        }
         return true;
     },
 
     // Mouse has moved while within a image's bounds.
 	mouseMove: function(e){
-	    e = this.getEvent(e);
 		var img = this.scalingImage;
         // Cancel if: no img, target is not a img element,
         // - we didn't even start scaling or the image is being animated.
@@ -172,34 +178,46 @@ com.eliot.imageResizer = {
 
     // Stop scaling if we hover out an image.
     mouseLeave: function(e){
-        var img = this.scalingImage;
-        if( img == null || !this.scaling ){
+        if( this.scalingImage == null || !this.scaling ){
             return true;
         }
         this.stopScaling(img, e);
-        this.suppressContextMenu = true;
+        if( this.dragKey == 3 ){
+            this.suppressContextMenu = true;
+        }
         return true;
     },
 
     // Mouse released. Stop scaling and try to cancel bleeding events.
     mouseUp: function(e){
-        e = this.getEvent(e);
+        // The image that was being resized.
         var img = this.scalingImage;
+        // Try select the hovered one then.
         if( !this.moved && img == null ){
             img = $(e.target);
+            console.log('scalingImage null');
         }
 
-        if( img == null || !img.is('img') || !this.isDragKey(e) ){
+        if( img == null || !img.is('img') ){
             return true;
         }
 
-        if( !this.moved && img.hasClass('imageResizerChangedClass') && this.restoreOriginal(img, e.target) ){
+        console.log('img:' + img + ' moved:' + this.moved + ' scaling:' + this.scaling);
+
+        if( this.isRestoreKey(e)
+            && !this.moved
+            && img.hasClass('imageResizerChangedClass')
+            && this.restoreOriginal(img, e.target)
+            ){
             this.suppressContextMenu = true;
         }
 
-        if( this.scaling ){
+        // @HACK for LMB preference.
+        if( this.scaling || this.dragKey == 1 ){
+            console.log('scaling true');
             this.stopScaling(img, e);
             if( this.moved ){
+                console.log('moved true');
                 this.suppressContextMenu = true;
                 this.cancelEvent(e);
                 return false;
@@ -220,12 +238,10 @@ com.eliot.imageResizer = {
     restoreOriginal: function(img,n){
         if( n.originalWidth ){
 			this.restoredImage = img;
-            var width = n.originalWidth;
-            var height = n.originalHeight;
+            n.imageResizerAnimating = true;
+            img.animate({"width": n.originalWidth, "height": n.originalHeight}, "slow", this.animFinish);
             n.originalWidth = null;
             n.originalHeight = null;
-            n.imageResizerAnimating = true;
-            img.animate({"width": width, "height": height}, "slow", this.animFinish);
             return true;
         }
         return false;
@@ -276,7 +292,6 @@ com.eliot.imageResizer = {
 
     // Apply a brief title(due mouse button swap) on dragging, but keep the old title.
     hover: function(e){
-        e = this.getEvent(e);
         img = $(e.target);
         if( !img.is('img') || !this.validImage(img) ){
             return;
@@ -301,13 +316,12 @@ com.eliot.imageResizer = {
             img.attr('title', orgTitle + 'Restore by pressing the right mouse button.');
         }
         else{
-            img.attr('title', orgTitle + 'Resize by dragging with the right mouse button.');
+            img.attr('title', orgTitle + 'Resize by dragging with the ' + (this.dragKey == 1 ? 'left' : 'right') + ' mouse button.');
         }
     },
 
     // Undo the title modification, in-case other js/mods read the title.
     unhover: function(e){
-        e = this.getEvent(e);
         img = $(e.target);
         if( !img.is('img') || !this.validImage(img) ){
             return;
@@ -316,6 +330,14 @@ com.eliot.imageResizer = {
         img.attr('title', e.target.imageResizerTitle);
     }
 };
+
+// Apply our user's preferences
+self.port.on('prefs', function(options){
+    com.eliot.imageResizer.addHint = options.showHoverMessage;
+    if( options.mouseDragButton === false ){
+        com.eliot.imageResizer.dragKey = 1;
+    }
+});
 
 $(document).ready(function(){
     $('body').ready(function(){
@@ -328,6 +350,12 @@ $(document).ready(function(){
         $('body').on('mousemove',       (function(e){com.eliot.imageResizer.mouseMove(e);}));
         $('body img').on('mouseleave',  (function(e){com.eliot.imageResizer.mouseLeave(e);}));
         $('body').on('mouseup',         (function(e){com.eliot.imageResizer.mouseUp(e);}));
-        $('img:not(#map.panel-with-start)').hover((function(e){com.eliot.imageResizer.hover(e);}), (function(e){com.eliot.imageResizer.unhover(e);}));
+        if( com.eliot.imageResizer.addHint ){
+            // ignore google maps
+            $('img:not(#map.panel-with-start)').hover(
+                (function(e){com.eliot.imageResizer.hover(e);}),
+                (function(e){com.eliot.imageResizer.unhover(e);})
+            );
+        }
     });
 });
