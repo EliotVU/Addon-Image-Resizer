@@ -28,7 +28,6 @@ if( typeof(com) == "undefined" )
 if( !com.eliot )
     com.eliot = {};
 
-// TBH: This code is a huge mess of logic LOL.
 com.eliot.imageResizer = {
     _clickPosX: 0.0,
     _clickPosY: 0.0,
@@ -40,6 +39,8 @@ com.eliot.imageResizer = {
     moved: false,
     suppressContextMenu: false,
     suppressClick: false,
+    _mouseMoveContext: (function(e){com.eliot.imageResizer.mouseMove(e)}),
+    _mouseOutContext: (function(){com.eliot.imageResizer.mouseLeave()}),
 
     // Options
     dragKey: 3,     // Right mouse button.
@@ -99,10 +100,9 @@ com.eliot.imageResizer = {
     // Start dragging if mouseDown is on a image bounds.
     mouseDown: function(e){
         var img = $(e.target);
-        if( (!img.is('img') || !this.validImage(img))
-            || (e.target.imageResizerAnimating || (this.isDisabled(e) && e.which != 2)) ){
-            return true;
-        }
+        if( (!this.validImage(img)) || e.target.imageResizerAnimating
+            || (this.isDisabled(e) && e.which != 2)
+        ){return true;}
 
         // Begin scaling the image if: Mouse is dragging on the image.
         if( this.isDragKey(e) ){
@@ -113,6 +113,9 @@ com.eliot.imageResizer = {
             this._orgScalingY = img.height();
             this.startScaling(img);
             this.cancelEvent(e);
+
+            img.on('mousemove', this._mouseMoveContext);
+            img.on('mouseout', this._mouseOutContext);
             return false;
         }
         else if( e.which == 2 ){
@@ -145,9 +148,7 @@ com.eliot.imageResizer = {
     // Mouse has moved while within a image's bounds.
 	mouseMove: function(e){
 		var img = this.scalingImage;
-        // Cancel if: no img, target is not a img element,
-        // - we didn't even start scaling or the image is being animated.
-		if( img == null || !img.is('img') || !this.scaling || e.target.imageResizerAnimating ){
+		if( img == null || !this.scaling || e.target.imageResizerAnimating ){
 			return true;
 		}
 
@@ -192,7 +193,7 @@ com.eliot.imageResizer = {
         if( this.scalingImage == null || !this.scaling ){
             return true;
         }
-        this.stopScaling(this.scalingImage, e);
+        this.stopScaling(this.scalingImage);
         if( this.dragKey == 3 ){
             this.suppressContextMenu = true;
         }
@@ -208,9 +209,12 @@ com.eliot.imageResizer = {
             img = $(e.target);
         }
 
-        if( img == null || !img.is('img') ){
+        if( img == null ){
             return true;
         }
+
+        img.unbind('mousemove', this._mouseMoveContext);
+        img.unbind('mouseout', this._mouseOutContext);
 
         if( this.isRestoreKey(e)
             && !this.moved
@@ -222,7 +226,7 @@ com.eliot.imageResizer = {
 
         // @HACK for LMB preference.
         if( this.scaling || this.dragKey == 1 ){
-            this.stopScaling(img, e);
+            this.stopScaling(img);
             if( this.moved ){
                 if( this.dragKey == 3 ){
                     this.suppressContextMenu = true;
@@ -282,7 +286,7 @@ com.eliot.imageResizer = {
     },
 
     // Dragging has stopped on said image.
-    stopScaling: function(img, e){
+    stopScaling: function(img){
         this.scaling = false;
         this.scalingImage = null;
 		img.removeClass('imageResizerActiveClass');
@@ -357,14 +361,13 @@ $(document).ready(function(){
     $('body').ready(function(){
         $("<style type='text/css'>\
             img.imageResizerActiveClass{cursor:nw-resize !important;outline:1px dashed black !important;}\
-            img.imageResizerChangedClass{z-index:300 !important;max-width:none !important;max-height:none !important; cursor:pointer;}\
+            img.imageResizerChangedClass{z-index:300 !important;max-width:none !important;max-height:none !important;}\
             img.imageResizerBoxClass{margin:auto; z-index:99999 !important; position:fixed; top:0; left:0; right:0; bottom:0; border:1px solid white; outline:1px solid black; cursor:pointer;}\
         </style>").appendTo('head');
-        $('body').on('contextmenu',     (function(e){com.eliot.imageResizer.contextMenu(e);}));
-        $('body').on('mousedown',       (function(e){com.eliot.imageResizer.mouseDown(e);}));
-        $('body').on('mousemove',       (function(e){com.eliot.imageResizer.mouseMove(e);}));
-        $('body img').on('mouseleave',  (function(e){com.eliot.imageResizer.mouseLeave(e);}));
-        $('body').on('mouseup',         (function(e){com.eliot.imageResizer.mouseUp(e);}));
+        // ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
+        $('body').on('contextmenu',        (function(e){com.eliot.imageResizer.contextMenu(e);}));
+        $('body').on('mousedown',   'img', (function(e){com.eliot.imageResizer.mouseDown(e);}));
+        $('body').on('mouseup',     'img', (function(e){com.eliot.imageResizer.mouseUp(e);}));
         if( com.eliot.imageResizer.addHint ){
             // ignore google maps
             $('img:not(#map.panel-with-start)').hover(
@@ -372,6 +375,6 @@ $(document).ready(function(){
                 (function(e){com.eliot.imageResizer.unhover(e);})
             );
         }
-        $('body').on('click', (function(e){com.eliot.imageResizer.click(e);}));
+        $('body').on('click', 'img', (function(e){com.eliot.imageResizer.click(e);}));
     });
 });
