@@ -367,7 +367,9 @@ $(document).ready(function(){
         // ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
         $('body').on('contextmenu',        (function(e){com.eliot.imageResizer.contextMenu(e);}));
         $('body').on('mousedown',   'img', (function(e){com.eliot.imageResizer.mouseDown(e);}));
-        $('body').on('mouseup',     'img', (function(e){com.eliot.imageResizer.mouseUp(e);}));
+        // Don't add 'img' as the selector because we want mouseup to be triggered if the user drags out of image bounds.
+        $('body').on('mouseup', (function(e){com.eliot.imageResizer.mouseUp(e);}));
+        // optional, bind hover(rather than selector) on every image because we have to verify if the image resizable.
         if( com.eliot.imageResizer.addHint ){
             // ignore google maps
             $('img:not(#map.panel-with-start)').hover(

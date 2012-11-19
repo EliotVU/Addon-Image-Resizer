@@ -1,11 +1,12 @@
 {
     "name": "image-resizer",
     "license": "LGPL 3.0",
-    "author": "Eliot van Uytfanghe",
+    "author": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
     "version": "1.3",
     "fullName": "Image Resizer/Scaler",
     "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
     "description": "Resize/Scale any image on the web by dragging at the image!",
+    "keyword": ['drag', 'image', 'photo', 'picture', 'resizer', 'scale', 'scaler', 'zoom'],
     "creator": "Netliot",
 
     "preferences":
