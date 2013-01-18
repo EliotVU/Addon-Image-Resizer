@@ -67,7 +67,6 @@ com.eliot.imageResizer = {
 
     cancelEvent: function(e){
         e.returnValue = false;
-        //e.stopImmediatePropagation();
         e.stopPropagation();
         e.preventDefault();
     },
@@ -80,9 +79,10 @@ com.eliot.imageResizer = {
         return this.size(x1, y1) - this.size(x2, y2);
     },
 
-    // Simple cancel the contextMenu, either if we hover out of a image's bounds while draggin,
+    // Simple cancel the contextMenu, either if we hover out of an image's bounds while draggin,
     // - or right click was performed as size restoration.
     contextMenu: function(e){
+//        console.log('contextMenu');
 		if( this.isDisabled(e) || !this.suppressContextMenu ){
 			return true;
 		}
@@ -115,7 +115,6 @@ com.eliot.imageResizer = {
             this.cancelEvent(e);
 
             img.on('mousemove', this._mouseMoveContext);
-            img.on('mouseout', this._mouseOutContext);
             return false;
         }
         else if( e.which == 2 ){
@@ -145,7 +144,7 @@ com.eliot.imageResizer = {
         return true;
     },
 
-    // Mouse has moved while within a image's bounds.
+    // Mouse has moved while within an image's bounds.
 	mouseMove: function(e){
 		var img = this.scalingImage;
 		if( img == null || !this.scaling || e.target.imageResizerAnimating ){
@@ -156,7 +155,7 @@ com.eliot.imageResizer = {
         var newSizeY = 0.00;
         var clampX = 33;
         var clampY = 33;
-        if( this.freeScaling ){
+        if( this.freeScaling || e.altKey ){
             newSizeX = e.clientX - this._clickPosX;
     		newSizeY = e.clientY - this._clickPosY;
         }
@@ -184,18 +183,23 @@ com.eliot.imageResizer = {
             img.addClass('imageResizerActiveClass');
             this._fixImage(img);
             this.moved = true;
+
+            // Start tracking mouse movement for out of bounds,
+            // so we can suppress the context menu and as well cancel resizing.
+            img.on('mouseout', this._mouseOutContext);
         }
 		return false;
 	},
 
     // Stop scaling if we hover out an image.
-    mouseLeave: function(e){
+    mouseLeave: function(){
         if( this.scalingImage == null || !this.scaling ){
             return true;
         }
         this.stopScaling(this.scalingImage);
         if( this.dragKey == 3 ){
             this.suppressContextMenu = true;
+//            console.log('suppressed');
         }
         return true;
     },
@@ -213,15 +217,13 @@ com.eliot.imageResizer = {
             return true;
         }
 
-        img.unbind('mousemove', this._mouseMoveContext);
-        img.unbind('mouseout', this._mouseOutContext);
-
         if( this.isRestoreKey(e)
             && !this.moved
             && img.hasClass('imageResizerChangedClass')
             && this.restoreOriginal(img, e.target)
             ){
             this.suppressContextMenu = true;
+//            console.log('suppressed');
         }
 
         // @HACK for LMB preference.
@@ -230,6 +232,7 @@ com.eliot.imageResizer = {
             if( this.moved ){
                 if( this.dragKey == 3 ){
                     this.suppressContextMenu = true;
+                    //console.log('suppressed');
                 }
                 else{
                     this.suppressClick = true;
@@ -283,6 +286,15 @@ com.eliot.imageResizer = {
         this.scaling = true;
         this.moved = false;
         this.scalingImage = img;
+
+        // Bypasses CSS:Width:... !important;
+        if( !img.attr('width') )
+            img.attr('width', 'inherit');
+
+        if( !img.attr('height') )
+            img.attr('height', 'inherit');
+
+        this._moveDelta = Date.now();
     },
 
     // Dragging has stopped on said image.
@@ -290,6 +302,9 @@ com.eliot.imageResizer = {
         this.scaling = false;
         this.scalingImage = null;
 		img.removeClass('imageResizerActiveClass');
+
+        img.unbind('mousemove', this._mouseMoveContext);
+        img.unbind('mouseout', this._mouseOutContext);
     },
 
     // Executed as soon when an image is resized.
@@ -362,10 +377,10 @@ $(document).ready(function(){
         $("<style type='text/css'>\
             img.imageResizerActiveClass{cursor:nw-resize !important;outline:1px dashed black !important;}\
             img.imageResizerChangedClass{z-index:300 !important;max-width:none !important;max-height:none !important;}\
-            img.imageResizerBoxClass{margin:auto; z-index:99999 !important; position:fixed; top:0; left:0; right:0; bottom:0; border:1px solid white; outline:1px solid black; cursor:pointer;}\
-        </style>").appendTo('head');
+            img.imageResizerBoxClass{margin:auto; z-index:99999 !important; position:fixed; top:0; left:0; right:0; bottom:0; border:1px solid white; outline:1px solid black;}\
+        </style>").appendTo('body');
         // ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
-        $('body').on('contextmenu',        (function(e){com.eliot.imageResizer.contextMenu(e);}));
+        $(document).on('contextmenu',        (function(e){com.eliot.imageResizer.contextMenu(e);}));
         $('body').on('mousedown',   'img', (function(e){com.eliot.imageResizer.mouseDown(e);}));
         // Don't add 'img' as the selector because we want mouseup to be triggered if the user drags out of image bounds.
         $('body').on('mouseup', (function(e){com.eliot.imageResizer.mouseUp(e);}));
