@@ -293,8 +293,6 @@ com.eliot.imageResizer = {
 
         if( !img.attr('height') )
             img.attr('height', 'inherit');
-
-        this._moveDelta = Date.now();
     },
 
     // Dragging has stopped on said image.
