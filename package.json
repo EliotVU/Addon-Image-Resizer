@@ -1,9 +1,43 @@
 {
-    "name": "Image Resizer",
+    "name": "image-resizer",
     "license": "LGPL 3.0",
-    "author": "Eliot van Uytfanghe",
-    "version": "1.2",
+    "author": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
+    "version": "1.3",
     "fullName": "Image Resizer/Scaler",
-    "id": "jid1-AZU1Zy4gkBNLlQ",
-    "description": "Resize/Scale any image on the web by dragging at the image!"
+    "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
+    "description": "Resize/Scale any image on the web by dragging at the image!",
+    "keyword": ["drag", "image", "photo", "picture", "resizer", "scale", "scaler", "zoom"],
+    "creator": "Netliot",
+
+    "preferences":
+    [
+        {
+            "name": "mouseDragButton",
+            "title": "Use RMB",
+            "description": "Whether RMB(Right Mouse Button) is the button used to resize images. LMB if disabled",
+            "type": "bool",
+            "value": true
+        },
+        {
+            "name": "showHoverMessage",
+            "title": "Display Image Tooltip",
+            "description": "Whether to show the resizing tooltip on images",
+            "type": "bool",
+            "value": true
+        },
+        {
+            "name": "freeScaling",
+            "title": "Free X/Y Scaling",
+            "description": "If enabled, dragging in the X direction will scale the height and vice-versa for Y, instead of scaling it equally",
+            "type": "bool",
+            "value": false
+        },
+        {
+            "name": "controlEnables",
+            "title": "Hold CTRL to Enable",
+            "description": "Reverses the logic of holding CTRL, when enabled you will have to hold down CTRL before resizing, instead of disabling when holding CTRL down",
+            "type": "bool",
+            "value": false
+        }
+    ]
 }
