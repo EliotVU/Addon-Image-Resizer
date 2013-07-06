@@ -22,6 +22,9 @@
 //    1.1 Update: 27 February 2012
 //    1.2 Update: 24 July 2012
 
+
+// I had better written this in an object oriented manner T_T
+
 if( typeof(com) == "undefined" )
     var com = {};
 
@@ -31,8 +34,9 @@ if( !com.eliot )
 com.eliot.imageResizer = {
     _clickPosX: 0.0,
     _clickPosY: 0.0,
-    _orgScalingX: 0.0,
-    _orgScalingY: 0.0,
+    _initSizeX: 0.0,
+    _initSizeY: 0.0,
+    scrollScaler: 0.0,
     scaling: false,
     scalingImage: null,
     restoredImage: null,
@@ -41,6 +45,7 @@ com.eliot.imageResizer = {
     suppressClick: false,
     _mouseMoveContext: (function(e){com.eliot.imageResizer.mouseMove(e)}),
     _mouseOutContext: (function(){com.eliot.imageResizer.mouseLeave()}),
+    _mouseScrollContext: (function(e){com.eliot.imageResizer.mouseScroll(e)}),
 
     // Options
     dragKey: 3,     // Right mouse button.
@@ -97,7 +102,7 @@ com.eliot.imageResizer = {
         return img.width() > 32 && img.height() > 32 && !img.hasClass('no-resize');
     },
 
-    // Start dragging if mouseDown is on a image bounds.
+    // Start dragging if mouseDown is on an image bounds.
     mouseDown: function(e){
         var img = $(e.target);
         if( (!this.validImage(img)) || e.target.imageResizerAnimating
@@ -109,12 +114,13 @@ com.eliot.imageResizer = {
             this.storeOriginal(img, e.target);
             this._clickPosX = e.clientX;
             this._clickPosY = e.clientY;
-            this._orgScalingX = img.width();
-            this._orgScalingY = img.height();
+            this._initSizeX = img.width();
+            this._initSizeY = img.height();
             this.startScaling(img);
             this.cancelEvent(e);
 
             img.on('mousemove', this._mouseMoveContext);
+            $(document).on('DOMMouseScroll', this._mouseScrollContext);
             return false;
         }
         else if( e.which == 2 ){
@@ -144,6 +150,84 @@ com.eliot.imageResizer = {
         return true;
     },
 
+    applyImageEffects: function(img){
+        if( img.hasClass('imageResizerActiveClass') )
+            return;
+
+        img.addClass('imageResizerActiveClass');
+        this._fixImage(img);
+    },
+
+    mouseScroll: function(e){
+        var img = this.scalingImage;
+        if( img == null || !this.scaling || img.get().imageResizerAnimating ){
+            return true;
+        }
+
+        // Although annoying, we have to avoid glitchy situations.
+        if( !this.moved ){
+            img.on('mouseout', this._mouseOutContext);
+            this.applyImageEffects(img);
+            this.moved = true;
+        }
+
+        // Retain size that was set through dragging.
+        if( this.scrollScaler == 0.0 && this.moved ){
+            this._initSizeX = img.width();
+            this._initSizeY = img.height();
+
+            // To ensure a smooth transition.
+            this._clickPosX = e.originalEvent.clientX;
+            this._clickPosY = e.originalEvent.clientY;
+        }
+
+        var isUp = e.originalEvent.detail < 0;
+        if( isUp ){
+            this.scrollScaler -= 1.0;
+        }
+        else{
+            this.scrollScaler += 1.0;
+        }
+
+        var newSizeX = this._initSizeX*this.percentScale * this.scrollScaler;
+        var newSizeY = newSizeX;
+
+        var size = this.fixSize(newSizeX, newSizeY);
+        img.width(Math.max(this._initSizeX + size.x, size.cx));
+        img.height(Math.max(this._initSizeY + size.y, size.cy));
+
+        // Don't increment scrollScaler if we reached the minimum size.
+        if( img.width() == size.cx || img.height() == size.cy ){
+            this.scrollScaler += 1.0;
+        }
+
+        this.cancelEvent(e);
+        return false;
+    },
+
+    minSize: 33.0,
+    percentScale: 0.25,
+
+    // Returns the new size scaled and clamped based on the initial size of an image.
+    fixSize: function(sizeX, sizeY){
+        var clampX = this.minSize;
+        var clampY = clampX;
+        var ratioX = 1.0;
+        var ratioY = 1.0;
+
+        if( this._initSizeX > this._initSizeY ){
+            ratioX = (this._initSizeX/this._initSizeY);
+            sizeX *= ratioX;
+            clampX *= ratioX;
+        }
+        else if( this._initSizeY > this._initSizeX ){
+            ratioY = (this._initSizeY/this._initSizeX);
+            sizeY *= ratioY;
+            clampY *= ratioY;
+        }
+        return {x: sizeX, y: sizeY, cx: clampX, cy: clampY, rx: ratioX, ry: ratioY};
+    },
+
     // Mouse has moved while within an image's bounds.
 	mouseMove: function(e){
 		var img = this.scalingImage;
@@ -151,37 +235,32 @@ com.eliot.imageResizer = {
 			return true;
 		}
 
-        var newSizeX = 0.00;
-        var newSizeY = 0.00;
-        var clampX = 33;
-        var clampY = 33;
+        var sizeXDifference = 0.00;
+        var sizeYDifference = 0.00;
+
+        // Retain the size that was set through scrolling.
+        if( this.scrollScaler != 0.0 ){
+            this._initSizeX = img.width();
+            this._initSizeY = img.height();
+            this.scrollScaler = 0.0;
+        }
+
         if( this.freeScaling || e.altKey ){
-            newSizeX = e.clientX - this._clickPosX;
-    		newSizeY = e.clientY - this._clickPosY;
+            sizeXDifference = e.clientX - this._clickPosX;
+    		sizeYDifference = e.clientY - this._clickPosY;
         }
         else{
-            newSizeX = this.localDistance(e.clientX, e.clientY, this._clickPosX, this._clickPosY);
-            newSizeY = newSizeX;
-
-            // Scale the image by the ratio of X and Y
-            if( this._orgScalingX > this._orgScalingY ){
-                var ratioX = (this._orgScalingX/this._orgScalingY);
-                newSizeX *= ratioX;
-                clampX *= ratioX;
-            }
-            else if( this._orgScalingY > this._orgScalingX ){
-                var ratioY = (this._orgScalingY/this._orgScalingX);
-                newSizeY *= ratioY;
-                clampY *= ratioY;
-            }
+            sizeXDifference = this.localDistance(e.clientX, e.clientY, this._clickPosX, this._clickPosY);
+            sizeYDifference = sizeXDifference;
         }
-		img.width(Math.max(this._orgScalingX + newSizeX, clampX));
-		img.height(Math.max(this._orgScalingY + newSizeY, clampY));
+        
+        var size = this.fixSize(sizeXDifference, sizeYDifference);
+        img.width(Math.max(this._initSizeX + size.x, size.cx));
+        img.height(Math.max(this._initSizeY + size.y, size.cy));
 
         // Check if the user has dragged, but check only for the first time since he began.
         if( !this.moved && (e.clientX != this._clickPosX || e.clientY != this._clickPosY) ){
-            img.addClass('imageResizerActiveClass');
-            this._fixImage(img);
+            this.applyImageEffects(img);
             this.moved = true;
 
             // Start tracking mouse movement for out of bounds,
@@ -283,6 +362,7 @@ com.eliot.imageResizer = {
 
     // Dragging has started on said image.
     startScaling: function(img){
+        this.scrollScaler = 0.0;
         this.scaling = true;
         this.moved = false;
         this.scalingImage = img;
@@ -303,6 +383,7 @@ com.eliot.imageResizer = {
 
         img.unbind('mousemove', this._mouseMoveContext);
         img.unbind('mouseout', this._mouseOutContext);
+        $(document).unbind('DOMMouseScroll', this._mouseScrollContext);
     },
 
     // Executed as soon when an image is resized.
@@ -371,7 +452,7 @@ self.port.on('prefs', function(options){
 });
 
 $(document).ready(function(){
-    $('body').ready(function(){
+    // $('body').ready(function(){
         $("<style type='text/css'>\
             img.imageResizerActiveClass{cursor:nw-resize !important;outline:1px dashed black !important;}\
             img.imageResizerChangedClass{z-index:300 !important;max-width:none !important;max-height:none !important;}\
@@ -391,5 +472,5 @@ $(document).ready(function(){
             );
         }
         $('body').on('click', 'img', (function(e){com.eliot.imageResizer.click(e);}));
-    });
+    // });
 });
