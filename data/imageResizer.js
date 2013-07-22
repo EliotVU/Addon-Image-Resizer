@@ -53,6 +53,8 @@ com.eliot.imageResizer = {
     addHint: true,
     freeScaling: false,
     controlEnables: false,
+    stopResizingOnMouseLeave: false,
+    enableImageSizeLimit: false,
 
     isControl: function(e){
         return e.ctrlKey || (e.metaKey != null && e.metaKey);
@@ -99,7 +101,7 @@ com.eliot.imageResizer = {
 
     // Whether the image supports rescaling.
     validImage: function(img){
-        return img.width() > 32 && img.height() > 32 && !img.hasClass('no-resize');
+        return (!this.enableImageSizeLimit || (img.width() > 32 && img.height() > 32)) && !img.hasClass('no-resize');
     },
 
     // Start dragging if mouseDown is on an image bounds.
@@ -119,7 +121,11 @@ com.eliot.imageResizer = {
             this.startScaling(img);
             this.cancelEvent(e);
 
-            img.on('mousemove', this._mouseMoveContext);
+            if( !this.stopResizingOnMouseLeave ){
+                $(window).on('mousemove', this._mouseMoveContext);    
+            } else{ 
+                img.on('mousemove', this._mouseMoveContext)
+            };
             $(document).on('DOMMouseScroll', this._mouseScrollContext);
             return false;
         }
@@ -210,7 +216,7 @@ com.eliot.imageResizer = {
 
     // Returns the new size scaled and clamped based on the initial size of an image.
     fixSize: function(sizeX, sizeY){
-        var clampX = this.minSize;
+        var clampX = this.enableImageSizeLimit ? this.minSize : 5;
         var clampY = clampX;
         var ratioX = 1.0;
         var ratioY = 1.0;
@@ -272,7 +278,7 @@ com.eliot.imageResizer = {
 
     // Stop scaling if we hover out an image.
     mouseLeave: function(){
-        if( this.scalingImage == null || !this.scaling ){
+        if( !this.stopResizingOnMouseLeave || this.scalingImage == null || !this.scaling ){
             return true;
         }
         this.stopScaling(this.scalingImage);
@@ -381,7 +387,11 @@ com.eliot.imageResizer = {
         this.scalingImage = null;
 		img.removeClass('imageResizerActiveClass');
 
-        img.unbind('mousemove', this._mouseMoveContext);
+        if( !this.stopResizingOnMouseLeave ){
+            $(window).unbind('mousemove', this._mouseMoveContext);    
+        } else{ 
+            img.unbind('mousemove', this._mouseMoveContext)
+        };
         img.unbind('mouseout', this._mouseOutContext);
         $(document).unbind('DOMMouseScroll', this._mouseScrollContext);
     },
@@ -449,6 +459,8 @@ self.port.on('prefs', function(options){
     }
     com.eliot.imageResizer.freeScaling = options.freeScaling;
     com.eliot.imageResizer.controlEnables = options.controlEnables;
+    com.eliot.imageResizer.stopResizingOnMouseLeave = options.stopResizingOnMouseLeave;
+    com.eliot.imageResizer.enableImageSizeLimit = options.enableImageSizeLimit;
 });
 
 $(document).ready(function(){

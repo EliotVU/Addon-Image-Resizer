@@ -2,7 +2,7 @@
     "name": "image-resizer",
     "license": "LGPL 3.0",
     "author": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
-    "version": "1.4",
+    "version": "1.5",
     "fullName": "Image Resizer/Scaler",
     "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
     "description": "Resize/Scale any image on the web by dragging at an image!",
@@ -30,6 +30,20 @@
             "name": "freeScaling",
             "title": "Free X/Y Scaling",
             "description": "If enabled, dragging in the X direction will scale the height and vice-versa for Y, instead of scaling it equally",
+            "type": "bool",
+            "value": false
+        },
+        {
+            "name": "stopResizingOnMouseLeave",
+            "title": "End resizing if mouse leaves image boundary",
+            "description": "If enabled, while resizing an image and if you move the mouse out of the image then the resizing process will be stopped",
+            "type": "bool",
+            "value": false
+        },
+        {
+            "name": "enableImageSizeLimit",
+            "title": "Prevent images from being resized below 32 pixels in size",
+            "description": "If enabled, images cannot be resized less than 32 pixels in width or height",
             "type": "bool",
             "value": false
         },
