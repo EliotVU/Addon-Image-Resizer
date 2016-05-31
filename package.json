@@ -1,17 +1,24 @@
 {
     "name": "image-resizer",
-    "license": "LGPL 3.0",
-    "author": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
-    "version": "1.5",
     "fullName": "Image Resizer/Scaler",
-    "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
     "description": "Resize/Scale any image on the web by dragging at an image!",
+
+    "author": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
+    "license": "LGPL 3.0",
+
+    "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
+    "version": "1.7.0",
+    "engines": {
+        "firefox": ">=33.0a1",
+        "fennec": ">=33.0a1"
+    },
+
     "keyword": ["drag", "image", "photo", "picture", "resizer", "scale", "scaler", "zoom"],
     "creator": "Netliot",
-    "permissions": {"private-browsing": true},
 
-    "preferences":
-    [
+    "main": "lib/main.js",
+    "permissions": {"private-browsing": true},
+    "preferences": [
         {
             "name": "mouseDragButton",
             "title": "Use RMB",
@@ -38,7 +45,7 @@
             "title": "End resizing if mouse leaves image boundary",
             "description": "If enabled, while resizing an image and if you move the mouse out of the image then the resizing process will be stopped",
             "type": "bool",
-            "value": false
+            "value": true
         },
         {
             "name": "enableImageSizeLimit",
