@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
     <head>
-        <title>Image Resizer/Scaler 1.4 Upgrade</title>
+        <title>Image Resizer/Scaler 1.7 Upgrade</title>
         <style type="text/css">
             html{
                 margin:0;
@@ -79,26 +79,57 @@
                 .new{
                     color:green;
                 }
+
+                .fix{
+                    color:red;
+                }
         </style>
     </head>
     <body>
         <img src="logo.png" style="float:right;height:50px;"/>
-        <h2 id="welcome">Hello! <a href="https://addons.mozilla.org/firefox/addon/image-resizer/">Image Resizer/Scaler</a> has successfully been upgraded to version 1.5</h2>
+        <h2 id="welcome">Hello! <a href="https://addons.mozilla.org/firefox/addon/image-resizer/">Image Resizer/Scaler</a> has successfully been upgraded to version 1.7</h2>
         <div id="updates">
+            <div class="upgrade-notes">
+                <h1>1.7 <span style="color:#99ccff;">Upgrade</span></h1>
+                <p>Version 1.7 introduces the following changes:</p>
+                <ul>
+                    <li>
+                        <span class="fix">Fixed</span>: Option "Display Image Tooltip" now works again on newer Firefox builds.
+                    </li>
+                    <li>
+                        <span class="new">New</span>: All option changes except for "Display Image Tooltip" will now take affect immediately.
+                    </li>
+                </ul>
+            </div>
+        </div>
+        <div id="history">
+            <div class="upgrade-notes">
+                <h1>1.6 <span style="color:#99ccff;">Upgrade</span></h1>
+                <p>Version 1.6 introduces the following changes:</p>
+                <ul>
+                    <li>
+                        <span class="fix">Fix</span>: Fixed an issue with text editors on certain forums where styles were inserted into the post's content.
+                    </li>
+                    <li>
+                        <span class="fix">Fix</span>: Fixed an issue where Image Resizer is not active when it should.
+                    </li>
+                    <li>
+                        <span class="new">New</span>: Image Resizer will now work on existing pages upon installation.
+                    </li>
+                </ul>
+            </div>
             <div class="upgrade-notes">
                 <h1>1.5 <span style="color:#99ccff;">Upgrade</span></h1>
                 <p>Version 1.5 introduces the following changes:</p>
                 <ul>
                     <li>
-                        <span class="new">New</span>: An option to "End resizing if mouse leaves image boundary", false on default.
+                        <span class="new">New</span>: An option to "End resizing if the mouse leaves an image's boundary", false on default.
                     </li>
                     <li>
                         <span class="new">New</span>: An option to "Prevent images from being resized below 32 pixels in size", false on default.
                     </li>
                 </ul>
-            </div>     
-        </div>
-        <div id="history">
+            </div>
             <div class="upgrade-notes">
                 <h1>1.4 <span style="color:#99ccff;">Upgrade</span></h1>
                 <p>Version 1.4 introduces the following changes:</p>
@@ -119,7 +150,7 @@
                         Updated the add-on to use the latest Add-on SDK built.
                     </li>
                 </ul>
-            </div>  
+            </div>
             <div class="upgrade-notes">
                 <h1>1.3 <span style="color:#99ccff;">Upgrade</span></h1>
                 <p>Version 1.3 introduces the following changes:</p>
