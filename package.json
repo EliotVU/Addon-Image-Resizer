@@ -7,17 +7,17 @@
     "license": "LGPL 3.0",
 
     "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
-    "version": "1.7.0",
+    "version": "1.7.1",
     "engines": {
-        "firefox": ">=33.0a1",
-        "fennec": ">=33.0a1"
+        "firefox": ">=50.0",
+        "fennec": ">=50.0"
     },
 
     "keyword": ["drag", "image", "photo", "picture", "resizer", "scale", "scaler", "zoom"],
     "creator": "Netliot",
 
     "main": "lib/main.js",
-    "permissions": {"private-browsing": true},
+    "permissions": {"private-browsing": true, "multiprocess": true},
     "preferences": [
         {
             "name": "mouseDragButton",
