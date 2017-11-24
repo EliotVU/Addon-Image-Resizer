@@ -7,30 +7,33 @@
         "url": "://eliotvu.com"
     },
     "description": "Resize/Scale any image on the web by dragging at an image!",
-
+    "options_ui": {
+        "page": "options.html",
+        "browser_style": true
+    },
     "icons": {
         "48": "data/app/logo.png",
         "96": "data/app/logo.png"
     },
-
     "applications": {
         "gecko": {
             "id": "jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack",
             "strict_min_version": "42.0"
         }
     },
-
-    "permissions": [],
-
-	"background": {
+    "permissions": [
+        "storage"
+    ],
+    "background": {
         "scripts": [
             "lib/main.js"
         ]
     },
-
     "content_scripts": [
         {
-            "matches": ["<all_urls>"],
+            "matches": [
+                "<all_urls>"
+            ],
             "js": [
                 "data/jquery-2.2.4.min.js",
                 "data/imageResizer.js"

@@ -18,14 +18,8 @@
 //    Site: EliotVU.com
 //==============================================================================
 
-//    Published: 15 February 2012
-//    1.1 Update: 27 February 2012
-//    1.2 Update: 24 July 2012
-
-
-// I had better written this in an object oriented manner T_T
-
-var imagePrefs = {
+var preferences = {
+    // Use RMB? (Note: old naming convention).
     mouseDragButton: true,
     showHoverMessage: true,
     freeScaling: false,
@@ -59,7 +53,7 @@ var imageResizer = {
     },
 
     isDisabled: function (e) {
-        return imagePrefs.controlEnables ? !this.isControl(e) : this.isControl(e);
+        return preferences.controlEnables ? !this.isControl(e) : this.isControl(e);
     },
 
     isDragKey: function (e) {
@@ -87,7 +81,6 @@ var imageResizer = {
     // Simple cancel the contextMenu, either if we hover out of an image's bounds while draggin,
     // - or right click was performed as size restoration.
     contextMenu: function (e) {
-        //        console.log('contextMenu');
         if (this.isDisabled(e) || !this.suppressContextMenu) {
             return true;
         }
@@ -99,7 +92,7 @@ var imageResizer = {
 
     // Whether the image supports rescaling.
     validImage: function (img) {
-        return (imagePrefs.enableImageSizeLimit || (img.width() > 32 && img.height() > 32)) && !img.hasClass('no-resize');
+        return (preferences.enableImageSizeLimit || (img.width() > 32 && img.height() > 32)) && !img.hasClass('no-resize');
     },
 
     // Start dragging if mouseDown is on an image bounds.
@@ -119,7 +112,7 @@ var imageResizer = {
             this.startScaling(img);
             this.cancelEvent(e);
 
-            if (imagePrefs.stopResizingOnMouseLeave) {
+            if (preferences.stopResizingOnMouseLeave) {
                 $(window).on('mousemove', this._mouseMoveContext);
             } else {
                 img.on('mousemove', this._mouseMoveContext)
@@ -214,7 +207,7 @@ var imageResizer = {
 
     // Returns the new size scaled and clamped based on the initial size of an image.
     fixSize: function (sizeX, sizeY) {
-        var clampX = self.options.enableImageSizeLimit ? this.minSize : 5;
+        var clampX = preferences.enableImageSizeLimit ? this.minSize : 5;
         var clampY = clampX;
         var ratioX = 1.0;
         var ratioY = 1.0;
@@ -249,7 +242,7 @@ var imageResizer = {
             this.scrollScaler = 0.0;
         }
 
-        if ((imagePrefs.freeScaling) || e.altKey) {
+        if ((preferences.freeScaling) || e.altKey) {
             sizeXDifference = e.clientX - this._clickPosX;
             sizeYDifference = e.clientY - this._clickPosY;
         }
@@ -276,7 +269,7 @@ var imageResizer = {
 
     // Stop scaling if we hover out an image.
     mouseLeave: function () {
-        if (imagePrefs.stopResizingOnMouseLeave || this.scalingImage == null || !this.scaling) {
+        if (preferences.stopResizingOnMouseLeave || this.scalingImage == null || !this.scaling) {
             return true;
         }
         this.stopScaling(this.scalingImage);
@@ -385,7 +378,7 @@ var imageResizer = {
         this.scalingImage = null;
         img.removeClass('imageResizerActiveClass');
 
-        if (imagePrefs.stopResizingOnMouseLeave) {
+        if (preferences.stopResizingOnMouseLeave) {
             $(window).unbind('mousemove', this._mouseMoveContext);
         } else {
             img.unbind('mousemove', this._mouseMoveContext)
@@ -449,25 +442,68 @@ var imageResizer = {
     }
 };
 
-$(document).ready(function () {
-    var bodyEl = $('body');
-    // Do not modify iframes of text-editors where possible.
-    if (bodyEl.hasClass('wysiwyg')) {
+// HACK: DOMContentLoaded is never fired in Firefox when viewing an image directly!
+var bLoaded = false;
+window.addEventListener('load', () => {
+    if (bLoaded) {
         return;
     }
-    // ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
-    $(document).on('contextmenu', (function (e) { imageResizer.contextMenu(e); }));
-    bodyEl.on('mousedown', 'img', (function (e) { imageResizer.mouseDown(e); }));
+    bLoaded = true;
+    setup();
+})
+
+document.addEventListener('DOMContentLoaded', () => {
+    bLoaded = true;
+    setup();
+});
+
+// ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
+// FIXME: Not fired when viewing an image directly!
+window.addEventListener('contextmenu', (e) => {
+    imageResizer.contextMenu.call(imageResizer, e);
+});
+
+function setup() {
+    var bodyEl = document.body;
+    if (bodyEl.classList.contains('wysiwyg')) {
+        // Do not modify iframes of text-editors where possible.
+        return;
+    }
+
+    bodyEl.addEventListener('mousedown', (e) => {
+        if (e.target.nodeName === 'IMG') {
+            imageResizer.mouseDown.call(imageResizer, e);
+        }
+    });
+
     // Don't add 'img' as the selector because we want mouseup to be triggered if the user drags out of image bounds.
-    bodyEl.on('mouseup', (function (e) { imageResizer.mouseUp(e); }));
+    bodyEl.addEventListener('mouseup', (e) => {
+        imageResizer.mouseUp.call(imageResizer, e);
+    });
 
     // optional, bind hover(rather than selector) on every image because we have to verify if the image resizable.
-    if (imagePrefs.showHoverMessage) {
+    if (preferences.showHoverMessage) {
         // ignore google maps
         $('img:not(#map.panel-with-start)').hover(
-            (function (e) { imageResizer.hover(e); }),
-            (function (e) { imageResizer.unhover(e); })
+            (e) => imageResizer.hover.call(imageResizer, e),
+            (e) => imageResizer.unhover.call(imageResizer, e)
         );
     }
-    bodyEl.on('click', 'img', (function (e) { imageResizer.click(e); }));
-});
+    $(bodyEl).on('click', 'img', (e) => imageResizer.click.call(imageResizer, e));
+}
+
+function updatePrefs(res) {
+    preferences = Object.assign(preferences, res.preferences);
+    imageResizer.dragKey = preferences.mouseDragButton ? 3 : 1;
+}
+
+browser.storage.sync.get('preferences').then(updatePrefs);
+
+// FIXME: Web-extension context error!
+// browser.storage.onChanged.addListener((changes) => {
+//     var changedPrefs = {};
+//     for (let key in changes) {
+//         changedPrefs[key] = changes[key].newValue;
+//     }
+//     updatePrefs({ preferences: changedPrefs });
+// });

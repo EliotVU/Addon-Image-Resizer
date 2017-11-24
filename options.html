@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Image Resizer - Options</title>
+        <script type="text/javascript" src="options.js"></script>
+    </head>
+    <body>
+        <label for="mouseDragButton" title="Whether RMB(Right Mouse Button) is the button used to resize images. LMB if disabled">
+            <input type="checkbox" id="mouseDragButton" name="mouseDragButton">
+            Use RMB
+        </label>
+        <label for="showHoverMessage" title="Whether to show the resizing tooltip on images">
+            <input type="checkbox" id="showHoverMessage" name="showHoverMessage">
+            Display Image Tooltip
+        </label>
+        <label for="freeScaling" title="If enabled, dragging in the X direction will scale the height and vice-versa for Y, instead of scaling it equally">
+            <input type="checkbox" id="freeScaling" name="freeScaling">
+            Free X/Y Scaling
+        </label>
+        <label for="stopResizingOnMouseLeave" title="If enabled, while resizing an image and if you move the mouse out of the image then the resizing process will be stopped">
+            <input type="checkbox" id="stopResizingOnMouseLeave" name="stopResizingOnMouseLeave">
+            End resizing if mouse leaves image boundary
+        </label>
+        <label for="enableImageSizeLimit" title="If enabled, images cannot be resized less than 32 pixels in width or height">
+            <input type="checkbox" id="enableImageSizeLimit" name="enableImageSizeLimit">
+            Prevent images from being resized below 32 pixels in size
+        </label>
+        <label for="controlEnables" title="Reverses the logic of holding CTRL, when enabled you will have to hold down CTRL before resizing, instead of disabling when holding CTRL down">
+            <input type="checkbox" id="controlEnables" name="controlEnables">
+            Hold CTRL to Enable
+        </label>
+    </body>
+</html>
