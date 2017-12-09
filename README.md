@@ -2,15 +2,8 @@ Image Resizer/Scaler
 =====
 Copyright 2012-2017 Eliot van Uytfanghe
 
-Image Resizer/Scaler is an add-on for Firefox, which adds the ability to resize any image on the web by dragging the image!
+Image Resizer is an webextension for Firefox, adding the ability to resize images by simply dragging the image!
 You can try the latest available public or test build from: https://addons.mozilla.org/en-US/firefox/addon/image-resizer/versions/
-
-
-Add-on SDK
-=====
-Image Resizer/Scaler is developed on the Mozilla Add-on SDK version 1.11.
-http://addons.mozilla.org/en-US/developers/docs/sdk/1.11/
-
 
 License
 =====
