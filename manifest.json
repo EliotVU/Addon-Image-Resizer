@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
     "name": "image-resizer",
-    "version": "1.0",
+    "version": "1.7.2c",
     "developer": {
         "name": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
         "url": "://eliotvu.com"
@@ -12,8 +12,7 @@
         "browser_style": true
     },
     "icons": {
-        "48": "data/app/logo.png",
-        "96": "data/app/logo.png"
+        "48": "icon-x64.png"
     },
     "applications": {
         "gecko": {
