@@ -9,20 +9,46 @@
 
         body {
             margin: 0 auto;
-            width: 250px;
-            height: 250px;
+            width: 450px;
+            height: 450px;
             background-color: gray;
         }
 
         img {
             background-color: red;
         }
+
+        .default {
+            width: 64px;
+            height: 64px;
+        }
+
+        .fixed {
+            height: 64px !important;
+            width: 64px !important;
+        }
     </style>
 </head>
 
 <body>
-    <img src="../icon-x64.png" />
+    <div>
+        <p>Supported</p>
+        <img id="img-default" class="default" src="../icon-x64.png" alt="Example" />
+        <img id="img-backgroundImage" class="default" style="background-image: url('../icon-x64.png')" alt="Background" />
+    </div>
+
+    <div>
+        <p>Not supported</p>
+        <img id="img-fixed" class="fixed" src="../icon-x64.png" alt="Fixed" />
+        <div class="fixed" style="overflow: hidden;">
+            <img id="img-clipped" class="default" src="../icon-x64.png" alt="Clipped" />
+        </div>
+        <div id="div-backgroundImage" class="default" style="background-image: url('../icon-x64.png')" > DIV </div>
+        <iframe allowfullscreen="true" frameborder="0" src="./iframe-template.html">
+        </iframe>
+    </div>
 </body>
+
 <script type="text/javascript" src="../data/jquery-2.2.4.min.js"></script>
 <script type="text/javascript" src="../data/imageResizer.js"></script>
 
