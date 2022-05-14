@@ -442,25 +442,30 @@ var imageResizer = {
     }
 };
 
-// HACK: DOMContentLoaded is never fired in Firefox when viewing an image directly!
-var bLoaded = false;
-window.addEventListener('load', () => {
-    if (bLoaded) {
-        return;
-    }
-    bLoaded = true;
-    setup();
-})
-
 document.addEventListener('DOMContentLoaded', () => {
-    bLoaded = true;
     setup();
 });
 
+window.addEventListener('mousedown', (e) => {
+    if (e.target.nodeName === 'IMG') {
+        imageResizer.mouseDown.call(imageResizer, e);
+    }
+});
+
+// Don't add 'img' as the selector because we want mouseup to be triggered if the user drags out of image bounds.
+window.addEventListener('mouseup', (e) => {
+    imageResizer.mouseUp.call(imageResizer, e);
+});
+
 // ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
-// FIXME: Not fired when viewing an image directly!
 window.addEventListener('contextmenu', (e) => {
     imageResizer.contextMenu.call(imageResizer, e);
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target.nodeName === 'IMG') {
+        imageResizer.click.call(imageResizer, e);
+    }
 });
 
 function setup() {
@@ -470,17 +475,6 @@ function setup() {
         return;
     }
 
-    bodyEl.addEventListener('mousedown', (e) => {
-        if (e.target.nodeName === 'IMG') {
-            imageResizer.mouseDown.call(imageResizer, e);
-        }
-    });
-
-    // Don't add 'img' as the selector because we want mouseup to be triggered if the user drags out of image bounds.
-    bodyEl.addEventListener('mouseup', (e) => {
-        imageResizer.mouseUp.call(imageResizer, e);
-    });
-
     // optional, bind hover(rather than selector) on every image because we have to verify if the image resizable.
     if (preferences.showHoverMessage) {
         // ignore google maps
@@ -489,21 +483,21 @@ function setup() {
             (e) => imageResizer.unhover.call(imageResizer, e)
         );
     }
-    $(bodyEl).on('click', 'img', (e) => imageResizer.click.call(imageResizer, e));
 }
 
-function updatePrefs(res) {
-    preferences = Object.assign(preferences, res.preferences);
-    imageResizer.dragKey = preferences.mouseDragButton ? 3 : 1;
+if (typeof browser !== 'undefined') {
+    function updatePrefs(res) {
+        preferences = Object.assign(preferences, res.preferences);
+        imageResizer.dragKey = preferences.mouseDragButton ? 3 : 1;
+    }
+    browser.storage.sync.get('preferences').then(updatePrefs);
+
+    // FIXME: Web-extension context error!
+    // browser.storage.onChanged.addListener((changes) => {
+    //     var changedPrefs = {};
+    //     for (let key in changes) {
+    //         changedPrefs[key] = changes[key].newValue;
+    //     }
+    //     updatePrefs({ preferences: changedPrefs });
+    // });
 }
-
-browser.storage.sync.get('preferences').then(updatePrefs);
-
-// FIXME: Web-extension context error!
-// browser.storage.onChanged.addListener((changes) => {
-//     var changedPrefs = {};
-//     for (let key in changes) {
-//         changedPrefs[key] = changes[key].newValue;
-//     }
-//     updatePrefs({ preferences: changedPrefs });
-// });
