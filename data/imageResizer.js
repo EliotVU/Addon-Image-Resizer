@@ -275,7 +275,6 @@ var imageResizer = {
         this.stopScaling(this.scalingImage);
         if (this.dragKey == 3) {
             this.suppressContextMenu = true;
-            //            console.log('suppressed');
         }
         return true;
     },
@@ -299,7 +298,6 @@ var imageResizer = {
             && this.restoreOriginal(img, e.target)
         ) {
             this.suppressContextMenu = true;
-            //            console.log('suppressed');
         }
 
         // @HACK for LMB preference.
@@ -308,7 +306,6 @@ var imageResizer = {
             if (this.moved) {
                 if (this.dragKey == 3) {
                     this.suppressContextMenu = true;
-                    //console.log('suppressed');
                 }
                 else {
                     this.suppressClick = true;
@@ -409,27 +406,7 @@ var imageResizer = {
             return;
         }
 
-        var orgTitle;
-        if (e.target.imageResizerTitle) {
-            orgTitle = e.target.imageResizerTitle;
-        }
-        else {
-            orgTitle = img.attr('title');
-            if (typeof (orgTitle) == "undefined") {
-                orgTitle = '';
-            }
-            else if (orgTitle != null && orgTitle != '') {
-                orgTitle = orgTitle + '\r\n\r\n';
-            }
-            e.target.imageResizerTitle = orgTitle;
-        }
-
-        if (img.hasClass('imageResizerChangedClass')) {
-            img.attr('title', orgTitle + 'Restore by pressing the right mouse button.');
-        }
-        else {
-            img.attr('title', orgTitle + 'Resize by dragging with the ' + (this.dragKey == 1 ? 'left' : 'right') + ' mouse button.');
-        }
+        // Deprecated, placeholder for later
     },
 
     // Undo the title modification, in-case other js/mods read the title.
@@ -438,13 +415,10 @@ var imageResizer = {
         if (!img.is('img') || !this.validImage(img)) {
             return;
         }
-        img.attr('title', e.target.imageResizerTitle);
+
+        // Deprecated, placeholder for later
     }
 };
-
-document.addEventListener('DOMContentLoaded', () => {
-    setup();
-});
 
 window.addEventListener('mousedown', (e) => {
     if (e.target.nodeName === 'IMG') {
@@ -467,23 +441,6 @@ window.addEventListener('click', (e) => {
         imageResizer.click.call(imageResizer, e);
     }
 });
-
-function setup() {
-    var bodyEl = document.body;
-    if (bodyEl.classList.contains('wysiwyg')) {
-        // Do not modify iframes of text-editors where possible.
-        return;
-    }
-
-    // optional, bind hover(rather than selector) on every image because we have to verify if the image resizable.
-    if (preferences.showHoverMessage) {
-        // ignore google maps
-        $('img:not(#map.panel-with-start)').hover(
-            (e) => imageResizer.hover.call(imageResizer, e),
-            (e) => imageResizer.unhover.call(imageResizer, e)
-        );
-    }
-}
 
 if (typeof browser !== 'undefined') {
     function updatePrefs(res) {
