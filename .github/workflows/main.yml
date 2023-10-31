@@ -29,7 +29,6 @@ jobs:
         with:
           web-ext-source-dir: "./"
           web-ext-target-dir: "./releases"
-          web-ext-id: "{jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack}"
           amo-api-key: ${{ secrets.AMO_API_KEY }}
           amo-api-secret: ${{ secrets.AMO_API_SECRET }}
           sign-listed: true
