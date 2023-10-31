@@ -1,20 +1,22 @@
-name: Builds, signs and publishes the WebExtension
+name: Publish to AMO
+
 on:
   push:
     paths:
       - './manifest.json'
-    branches:
-      - master
+    tags:
+      - 'Release-*'
+      - 'Hotfix-*'
 
 jobs:
   publish-to-amo:
     name: Build and publish the extension
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v2
         with:
-            node-version: '14'
+            node-version: '16'
           
       - name: npm install webext
         run: npm install
@@ -25,8 +27,9 @@ jobs:
       - name: Sign the web-ext
         uses: issammani/sign-web-extension-action@master
         with:
-          web-ext-source-dir: "./dist"
+          web-ext-source-dir: "./"
           web-ext-target-dir: "./releases"
           web-ext-id: "{jid0-hd39BGK3EuIbK47rGW3fZdR163o@jetpack}"
           amo-api-key: ${{ secrets.AMO_API_KEY }}
           amo-api-secret: ${{ secrets.AMO_API_SECRET }}
+          sign-listed: true

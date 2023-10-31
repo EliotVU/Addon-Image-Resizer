@@ -1,19 +1,10 @@
 .imageResizerActiveClass {
     cursor: nw-resize !important;
-    outline: 1px dashed black !important;
+    outline: 1px dashed white !important;
 }
 
 .imageResizerChangedClass {
-    z-index: 300 !important;
+    /* z-index: 300 !important; */
     max-width: none !important;
     max-height: none !important;
-}
-
-.imageResizerBoxClass {
-    margin: auto;
-    z-index: 99999 !important;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    border: 1px solid white;
-    outline: 1px solid black;
 }

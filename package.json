@@ -1,0 +1,19 @@
+{
+    "name": "image-resizer",
+    "license": "LGPL-3.0-or-later",
+    "dependencies": {
+        "web-ext": "^7.5.0",
+        "webextension-polyfill": "^0.10.0"
+    },
+    "devDependencies": {
+        "@types/firefox-webext-browser": "^109.0.0",
+        "eslint": "^8.49.0"
+    },
+    "scripts": {
+        "start": "npx web-ext run --keep-profile-changes --browser-console -v",
+        "serve": "npm start -- --target=firefox-desktop --firefox-binary=firefoxdeveloperedition",
+        "watch": "npx web-ext build --overwrite-dest --as-needed",
+        "build": "npx web-ext build --overwrite-dest --ignore-files test/**/* web-ext-config.js package.json package-lock.json",
+        "test": "npm run build & npx web-ext lint --source-dir=dist"
+    }
+}

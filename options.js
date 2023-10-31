@@ -25,10 +25,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        document.querySelectorAll('input').forEach((el) => {
-            el.addEventListener('change', (event) => {
-                preferences[el.name] = el.checked;
-                browser.storage.sync.set({ preferences });
-            });
+    document.querySelectorAll('input').forEach((el) => {
+        el.addEventListener('change', (event) => {
+            preferences[el.name] = el.checked;
+            browser.storage.sync.set({ preferences });
         });
+    });
 });

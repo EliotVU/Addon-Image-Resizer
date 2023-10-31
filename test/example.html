@@ -1,21 +1,22 @@
+<!DOCTYPE html>
 <html>
 
 <head>
-    <style src="../data/imageResizer.css"></style>
+    <link rel="stylesheet" type="text/css" href="../data/imageResizer.css">
     <style>
-        html {
-            background-color: white;
-        }
-
         body {
             margin: 0 auto;
-            width: 450px;
-            height: 450px;
-            background-color: gray;
+            width: 760px;
+            background-color: #464444;
+            color: #ffefef;
+        }
+
+        p {
+            font-size: large;
         }
 
         img {
-            background-color: red;
+            outline: 4px solid #111188
         }
 
         .default {
@@ -27,29 +28,100 @@
             height: 64px !important;
             width: 64px !important;
         }
+
+        .sample {
+            margin: 8px 0;
+            padding: 0 16px 8px 16px;
+            background-color: #222;
+            border: 6px solid #383333;
+            border-radius: 3px;
+            color: white;
+        }
     </style>
 </head>
 
 <body>
+    <div style="position: fixed; bottom: 0; left: 0; margin: 16px;">
+        <label for="lmb">LMB?</label>
+        <input id="lmb" name="lmbInput" type="checkbox"
+            onchange="imageResizer.dragKey = Boolean(this.value) ? 1 : 3;" />
+        <script>
+            imageResizer.dragKey = Boolean(document.querySelector('#lmb').value) ? 1 : 3;
+        </script>
+    </div>
     <div>
-        <p>Supported</p>
-        <img id="img-default" class="default" src="../icon-x64.png" alt="Example" />
-        <img id="img-backgroundImage" class="default" style="background-image: url('../icon-x64.png')" alt="Background" />
+        <h2>Supported</h2>
+
+        <div class="sample">
+            <p>&lt;img&gt;</p>
+            <img id="img-default" class="default" src="../icon-x64.png" alt="Example" />
+        </div>
+
+        <div class="sample">
+            <p>&lt;img&gt; using style.background-image</p>
+            <img id="img-backgroundImage" class="default" style="background-image: url('../icon-x64.png')"
+                alt="Background" />
+        </div>
+
+        <div class="sample">
+            <p>&lt;img&gt; with padding</p>
+            <img id="img-default" style="padding: 8px;" class="default" src="../icon-x64.png" alt="Example" />
+        </div>
+
+        <div class="sample">
+            <p>&lt;img&gt; with border</p>
+            <img id="img-default" style="border: 8px solid black;" class="default" src="../icon-x64.png"
+                alt="Example" />
+        </div>
+
+        <div class="sample">
+            <p>&lt;img&gt; using percentages</p>
+            <img id="img-default" style="width: 40%; height: 40%;" src="../icon-x64.png" alt="Example" />
+        </div>
+
+        <div class="sample">
+            <p>&lt;img&gt; with a full scaled overlay</p>
+            <div style="display: block; position: relative; ">
+                <div style="position: absolute; z-index: 2;">
+                    <button>LIKE</button>
+                </div>
+                <img style="position: relative;" id="img-default" class="default" src="../icon-x64.png" alt="Example" />
+                <div style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; background-color: #88000080;">
+                </div>
+            </div>
+        </div>
     </div>
 
     <div>
-        <p>Not supported</p>
-        <img id="img-fixed" class="fixed" src="../icon-x64.png" alt="Fixed" />
-        <div class="fixed" style="overflow: hidden;">
-            <img id="img-clipped" class="default" src="../icon-x64.png" alt="Clipped" />
+        <h2>Not supported</h2>
+
+        <div class="sample">
+            <p>&lt;img&gt; with fixed dimensions</p>
+            <img id="img-fixed" class="fixed" src="../icon-x64.png" alt="Fixed" />
         </div>
-        <div id="div-backgroundImage" class="default" style="background-image: url('../icon-x64.png')" > DIV </div>
-        <iframe allowfullscreen="true" frameborder="0" src="./iframe-template.html">
-        </iframe>
+
+        <div class="sample">
+            <p>&lt;img&gt; with clipped dimensions in a container with fixed dimensions</p>
+            <div class="fixed" style="overflow: hidden;">
+                <img id="img-clipped" class="default" src="../icon-x64.png" alt="Clipped" />
+            </div>
+        </div>
+
+        <div class="sample">
+            <p>&lt;div&gt; using a style.background-image</p>
+            <div id="div-backgroundImage" class="default" style="background-image: url('../icon-x64.png')"> DIV </div>
+        </div>
+
+        <div class="sample">
+            <p>&lt;img&gt; in a contained iframe</p>
+            <iframe allowfullscreen="true" frameborder="0" src="./iframe-template.html">
+            </iframe>
+        </div>
+
     </div>
 </body>
 
-<script type="text/javascript" src="../data/jquery-2.2.4.min.js"></script>
+
 <script type="text/javascript" src="../data/imageResizer.js"></script>
 
 </html>

@@ -1,10 +1,10 @@
 {
     "manifest_version": 2,
     "name": "image-resizer",
-    "version": "1.7.2c",
+    "version": "1.8.0",
     "developer": {
-        "name": "Eliot van Uytfanghe (http://eliotvu.com) <me@eliotvu.com>",
-        "url": "://eliotvu.com"
+        "name": "Eliot van Uytfanghe (https://eliotvu.com) <contact@eliotvu.com>",
+        "url": "https://eliotvu.com"
     },
     "description": "Resize/Scale any image on the web by dragging at an image!",
     "options_ui": {
@@ -34,7 +34,6 @@
                 "<all_urls>"
             ],
             "js": [
-                "data/jquery-2.2.4.min.js",
                 "data/imageResizer.js"
             ],
             "css": [

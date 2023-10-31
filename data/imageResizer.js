@@ -14,19 +14,87 @@
 //    You should have received a copy of the GNU Lesser General Public License
 //    along with Image Resizer/Scaler.  If not, see <http://www.gnu.org/licenses/>.
 //==============================================================================
-//    Author: Eliot van Uytfanghe
-//    Site: EliotVU.com
-//==============================================================================
 
 var preferences = {
     // Use RMB? (Note: old naming convention).
     mouseDragButton: true,
-    showHoverMessage: true,
     freeScaling: false,
     stopResizingOnMouseLeave: true,
     enableImageSizeLimit: true,
-    controlEnables: false
+    controlEnables: false,
 };
+
+/**
+ * Returns the media width of an element
+ * @param {HTMLElement} mediaElement 
+ * @returns {number}
+ */
+function getMediaWidth(mediaElement) {
+    return mediaElement.width;
+}
+
+/**
+ * Sets the media width of an element
+ * @param {HTMLElement} mediaElement 
+ * @param {number} width 
+ * @returns {void}
+ */
+function setMediaWidth(mediaElement, width) {
+    mediaElement.style.width = `${width}px`;
+}
+
+/**
+ * Returns the media height of an element
+ * @param {HTMLElement} mediaElement 
+ * @returns {number}
+ */
+function getMediaHeight(mediaElement) {
+    return mediaElement.height;
+}
+
+/**
+ * Sets the media height of an element
+ * @param {HTMLElement} mediaElement 
+ * @param {number} height 
+ * @returns {void}
+ */
+function setMediaHeight(mediaElement, height) {
+    mediaElement.style.height = `${height}px`;
+}
+
+/**
+ * Determines whether an element is suited for re-sizing.
+ *
+ * @param {HTMLElement} mediaElement
+ * @returns {boolean}
+ */
+function isMediaResizable(mediaElement) {
+    return preferences.enableImageSizeLimit || (mediaElement.clientWidth > 32 && mediaElement.clientHeight > 32);
+}
+
+/**
+ * @param {HTMLElement} mediaElement 
+ * @returns {boolean}
+ */
+function isMediaResized(mediaElement) {
+    return mediaElement.classList.contains('imageResizerChangedClass');
+}
+
+/**
+ * @param {HTMLElement} mediaElement 
+ * @returns {boolean}
+ */
+function isMediaResizingActive(mediaElement) {
+    return mediaElement.classList.contains('imageResizerActiveClass');
+}
+
+/**
+ * @param {HTMLElement} mediaElement 
+ * @returns {boolean}
+ */
+function isMediaAnimating(mediaElement) {
+    return mediaElement.classList.contains('imageResizerAnimating');
+}
 
 var imageResizer = {
     _clickPosX: 0.0,
@@ -34,144 +102,154 @@ var imageResizer = {
     _initSizeX: 0.0,
     _initSizeY: 0.0,
     scrollScaler: 0.0,
-    scaling: false,
-    scalingImage: null,
-    restoredImage: null,
-    moved: false,
-    suppressContextMenu: false,
-    suppressClick: false,
-    _mouseMoveContext: (function (e) { imageResizer.mouseMove(e) }),
-    _mouseOutContext: (function () { imageResizer.mouseLeave() }),
-    _mouseScrollContext: (function (e) { imageResizer.mouseScroll(e) }),
+
+    isResizingActive: false,
+
+    /** @type {HTMLElement | null} */
+    activeMediaElement: null,
+
+    hasMouseMoved: false,
+
+    shouldSuppressContextMenu: false,
+    shouldSuppressClick: false,
+
+    _mouseMoveContext: function (e) {
+        imageResizer.mouseMove(e);
+    },
+    _mouseOutContext: function () {
+        imageResizer.mouseLeave();
+    },
+    _mouseScrollContext: function (e) {
+        imageResizer.mouseScroll(e);
+    },
 
     // Options
-    dragKey: 3,     // Right mouse button.
-    restoreKey: 3,  // Right mouse button.
+    dragKey: 3, // Right mouse button.
+    restoreKey: 3, // Right mouse button.
 
-    isControl: function (e) {
+    isControl(e) {
         return e.ctrlKey || (e.metaKey != null && e.metaKey);
     },
 
-    isDisabled: function (e) {
-        return preferences.controlEnables ? !this.isControl(e) : this.isControl(e);
+    isDisabled(e) {
+        return preferences.controlEnables
+            ? !this.isControl(e)
+            : this.isControl(e);
     },
 
-    isDragKey: function (e) {
+    isDragKey(e) {
         return e.which == this.dragKey;
     },
 
-    isRestoreKey: function (e) {
+    isRestoreKey(e) {
         return e.which == this.restoreKey;
     },
 
-    cancelEvent: function (e) {
+    cancelEvent(e) {
         e.returnValue = false;
         e.stopPropagation();
         e.preventDefault();
     },
 
-    size: function (x, y) {
+    size(x, y) {
         return Math.sqrt(x * x + y * y);
     },
 
-    localDistance: function (x1, y1, x2, y2) {
+    localDistance(x1, y1, x2, y2) {
         return this.size(x1, y1) - this.size(x2, y2);
     },
 
     // Simple cancel the contextMenu, either if we hover out of an image's bounds while draggin,
     // - or right click was performed as size restoration.
-    contextMenu: function (e) {
-        if (this.isDisabled(e) || !this.suppressContextMenu) {
+    handleContextMenuEvent(e) {
+        if (this.isDisabled(e) || !this.shouldSuppressContextMenu) {
             return true;
         }
-        this.suppressContextMenu = false;
-        this.restoredImage = null;
+
+        this.shouldSuppressContextMenu = false;
         this.cancelEvent(e);
         return false;
     },
 
-    // Whether the image supports rescaling.
-    validImage: function (img) {
-        return (preferences.enableImageSizeLimit || (img.width() > 32 && img.height() > 32)) && !img.hasClass('no-resize');
-    },
-
     // Start dragging if mouseDown is on an image bounds.
-    mouseDown: function (e) {
-        var img = $(e.target);
-        if ((!this.validImage(img)) || e.target.imageResizerAnimating
-            || (this.isDisabled(e) && e.which != 2)
-        ) { return true; }
+    mouseDown(e) {
+        /** @type {HTMLElement} */
+        var mediaElement = e.target;
+        if (this.isDisabled(e) && e.which != 2
+            || !isMediaResizable(mediaElement)
+            || isMediaAnimating(mediaElement)
+        ) {
+            return true;
+        }
 
         // Begin scaling the image if: Mouse is dragging on the image.
         if (this.isDragKey(e)) {
-            this.storeOriginal(img, e.target);
             this._clickPosX = e.clientX;
             this._clickPosY = e.clientY;
-            this._initSizeX = img.width();
-            this._initSizeY = img.height();
-            this.startScaling(img);
+            this._initSizeX = getMediaWidth(mediaElement);
+            this._initSizeY = getMediaHeight(mediaElement);
+            if (isMediaResized(mediaElement) === false) {
+                mediaElement.dataset.originalWidth = this._initSizeX;
+                mediaElement.dataset.originalHeight = this._initSizeY;
+                mediaElement.dataset.originalStyleWidth = mediaElement.style.width;
+                mediaElement.dataset.originalStyleHeight = mediaElement.style.height;
+            }
+            this.startScaling(mediaElement);
             this.cancelEvent(e);
 
             if (preferences.stopResizingOnMouseLeave) {
-                $(window).on('mousemove', this._mouseMoveContext);
+                window.addEventListener('mousemove', this._mouseMoveContext);
             } else {
-                img.on('mousemove', this._mouseMoveContext)
-            };
-            $(document).on('DOMMouseScroll', this._mouseScrollContext);
-            return false;
-        }
-        else if (e.which == 2) {
-            // Maximize the image if: Middle-Mouse while CTRL is down.
-            if (this.isControl(e)) {
-                this.storeOriginal(img, e.target);
-                this._fixImage(img);
-
-                // EXPERIMENTAL FEATURE
-                //img.addClass( 'imageResizerBoxClass' );
-
-                e.target.imageResizerAnimating = true;
-                img.height('auto');
-                img.animate({ "width": $(window).width() - 64 }, "slow", this._animFinish);
-                this.cancelEvent(e);
-                return false;
+                mediaElement.addEventListener('mousemove', this._mouseMoveContext);
             }
-        }
-        // If dragging is bound on LMB, then we'll still use RMB as restore functionality.
-        else if (e.which == 3 && this.dragKey == 1) {
+            document.addEventListener('DOMMouseScroll', this._mouseScrollContext);
+            return false;
+        } else if (e.which == 3 && this.dragKey == 1) {
+            // If dragging is bound on LMB, then we'll still use RMB as restore functionality.
             // @HACK: SIM scaling
-            this.startScaling(img);
-            this.scaling = false;
+            this.startScaling(mediaElement);
+            this.isResizingActive = false;
             this.cancelEvent(e);
             return false;
         }
+
         return true;
     },
 
-    applyImageEffects: function (img) {
-        if (img.hasClass('imageResizerActiveClass'))
+    /**
+     * @param {HTMLElement} mediaElement
+     */
+    applyImageEffects(mediaElement) {
+        if (isMediaResizingActive(mediaElement)) {
             return;
+        }
 
-        img.addClass('imageResizerActiveClass');
-        this._fixImage(img);
+        if (mediaElement.style.position === 'static') {
+            mediaElement.style.position = 'relative';
+        }
+        mediaElement.classList.add('imageResizerActiveClass', 'imageResizerChangedClass');
     },
 
-    mouseScroll: function (e) {
-        var img = this.scalingImage;
-        if (img == null || !this.scaling || img.get().imageResizerAnimating) {
+    mouseScroll(e) {
+        var mediaElement = this.activeMediaElement;
+        if (mediaElement == null
+            || !this.isResizingActive
+            || isMediaAnimating(mediaElement)
+        ) {
             return true;
         }
 
         // Although annoying, we have to avoid glitchy situations.
-        if (!this.moved) {
-            img.on('mouseout', this._mouseOutContext);
-            this.applyImageEffects(img);
-            this.moved = true;
+        if (!this.hasMouseMoved) {
+            mediaElement.addEventListener('mouseout', this._mouseOutContext);
+            this.applyImageEffects(mediaElement);
+            this.hasMouseMoved = true;
         }
 
         // Retain size that was set through dragging.
-        if (this.scrollScaler == 0.0 && this.moved) {
-            this._initSizeX = img.width();
-            this._initSizeY = img.height();
+        if (this.scrollScaler == 0.0 && this.hasMouseMoved) {
+            this._initSizeX = getMediaWidth(mediaElement);
+            this._initSizeY = getMediaHeight(mediaElement);
 
             // To ensure a smooth transition.
             this._clickPosX = e.originalEvent.clientX;
@@ -181,8 +259,7 @@ var imageResizer = {
         var isUp = e.originalEvent.detail < 0;
         if (isUp) {
             this.scrollScaler -= 1.0;
-        }
-        else {
+        } else {
             this.scrollScaler += 1.0;
         }
 
@@ -190,11 +267,14 @@ var imageResizer = {
         var newSizeY = newSizeX;
 
         var size = this.fixSize(newSizeX, newSizeY);
-        img.width(Math.max(this._initSizeX + size.x, size.cx));
-        img.height(Math.max(this._initSizeY + size.y, size.cy));
+        setMediaWidth(mediaElement, Math.max(this._initSizeX + size.x, size.cx));
+        setMediaHeight(mediaElement, Math.max(this._initSizeY + size.y, size.cy));
 
         // Don't increment scrollScaler if we reached the minimum size.
-        if (img.width() == size.cx || img.height() == size.cy) {
+        if (
+            getMediaWidth(mediaElement) == size.cx ||
+            getMediaHeight(mediaElement) == size.cy
+        ) {
             this.scrollScaler += 1.0;
         }
 
@@ -206,223 +286,251 @@ var imageResizer = {
     percentScale: 0.25,
 
     // Returns the new size scaled and clamped based on the initial size of an image.
-    fixSize: function (sizeX, sizeY) {
+    fixSize(sizeX, sizeY) {
         var clampX = preferences.enableImageSizeLimit ? this.minSize : 5;
         var clampY = clampX;
         var ratioX = 1.0;
         var ratioY = 1.0;
 
         if (this._initSizeX > this._initSizeY) {
-            ratioX = (this._initSizeX / this._initSizeY);
+            ratioX = this._initSizeX / this._initSizeY;
             sizeX *= ratioX;
             clampX *= ratioX;
-        }
-        else if (this._initSizeY > this._initSizeX) {
-            ratioY = (this._initSizeY / this._initSizeX);
+        } else if (this._initSizeY > this._initSizeX) {
+            ratioY = this._initSizeY / this._initSizeX;
             sizeY *= ratioY;
             clampY *= ratioY;
         }
-        return { x: sizeX, y: sizeY, cx: clampX, cy: clampY, rx: ratioX, ry: ratioY };
+        return {
+            x: sizeX,
+            y: sizeY,
+            cx: clampX,
+            cy: clampY,
+            rx: ratioX,
+            ry: ratioY,
+        };
     },
 
     // Mouse has moved while within an image's bounds.
-    mouseMove: function (e) {
-        var img = this.scalingImage;
-        if (img == null || !this.scaling || e.target.imageResizerAnimating) {
+    mouseMove(e) {
+        var mediaElement = this.activeMediaElement;
+        if (mediaElement == null
+            || !this.isResizingActive
+            || isMediaAnimating(mediaElement)
+        ) {
             return true;
         }
 
-        var sizeXDifference = 0.00;
-        var sizeYDifference = 0.00;
+        var sizeXDifference = 0.0;
+        var sizeYDifference = 0.0;
 
         // Retain the size that was set through scrolling.
         if (this.scrollScaler != 0.0) {
-            this._initSizeX = img.width();
-            this._initSizeY = img.height();
+            this._initSizeX = getMediaWidth(mediaElement);
+            this._initSizeY = getMediaHeight(mediaElement);
             this.scrollScaler = 0.0;
         }
 
-        if ((preferences.freeScaling) || e.altKey) {
+        if (preferences.freeScaling || e.altKey) {
             sizeXDifference = e.clientX - this._clickPosX;
             sizeYDifference = e.clientY - this._clickPosY;
-        }
-        else {
-            sizeXDifference = this.localDistance(e.clientX, e.clientY, this._clickPosX, this._clickPosY);
+        } else {
+            sizeXDifference = this.localDistance(
+                e.clientX,
+                e.clientY,
+                this._clickPosX,
+                this._clickPosY
+            );
             sizeYDifference = sizeXDifference;
         }
 
         var size = this.fixSize(sizeXDifference, sizeYDifference);
-        img.width(Math.max(this._initSizeX + size.x, size.cx));
-        img.height(Math.max(this._initSizeY + size.y, size.cy));
+        setMediaWidth(mediaElement, Math.max(this._initSizeX + size.x, size.cx));
+        setMediaHeight(mediaElement, Math.max(this._initSizeY + size.y, size.cy));
 
-        // Check if the user has dragged, but check only for the first time since he began.
-        if (!this.moved && (e.clientX != this._clickPosX || e.clientY != this._clickPosY)) {
-            this.applyImageEffects(img);
-            this.moved = true;
+        // Check if the user has dragged
+        if (!this.hasMouseMoved && (e.clientX != this._clickPosX || e.clientY != this._clickPosY)) {
+            this.applyImageEffects(mediaElement);
+            this.hasMouseMoved = true;
 
-            // Start tracking mouse movement for out of bounds,
+            // Start tracking mouse movements for out of bounds,
             // so we can suppress the context menu and as well cancel resizing.
-            img.on('mouseout', this._mouseOutContext);
+            mediaElement.addEventListener('mouseout', this._mouseOutContext);
         }
+
         return false;
     },
 
-    // Stop scaling if we hover out an image.
-    mouseLeave: function () {
-        if (preferences.stopResizingOnMouseLeave || this.scalingImage == null || !this.scaling) {
+    // Stop scaling if we leave an image's boundary.
+    mouseLeave() {
+        if (preferences.stopResizingOnMouseLeave
+            || this.activeMediaElement == null
+            || !this.isResizingActive
+        ) {
             return true;
         }
-        this.stopScaling(this.scalingImage);
+
+        this.stopScaling(this.activeMediaElement);
         if (this.dragKey == 3) {
-            this.suppressContextMenu = true;
+            this.shouldSuppressContextMenu = true;
         }
+
         return true;
     },
 
     // Mouse released. Stop scaling and try to cancel bleeding events.
-    mouseUp: function (e) {
-        // The image that was being resized.
-        var img = this.scalingImage;
-        // Try select the hovered one then.
-        if (!this.moved && img == null) {
-            img = $(e.target);
+    mouseUp(e) {
+        var mediaElement = this.activeMediaElement;
+        if (!this.hasMouseMoved && mediaElement == null) {
+            mediaElement = e.target;
         }
 
-        if (img == null) {
+        if (mediaElement == null) {
             return true;
         }
 
         if (this.isRestoreKey(e)
-            && !this.moved
-            && img.hasClass('imageResizerChangedClass')
-            && this.restoreOriginal(img, e.target)
+            && !this.hasMouseMoved
+            && isMediaResized(mediaElement)
         ) {
-            this.suppressContextMenu = true;
+            this.shouldSuppressContextMenu = true;
+            this.restore(mediaElement).then();
         }
 
         // @HACK for LMB preference.
-        if (this.scaling || this.dragKey == 1) {
-            this.stopScaling(img);
-            if (this.moved) {
+        if (this.isResizingActive || this.dragKey == 1) {
+            this.stopScaling(mediaElement);
+            if (this.hasMouseMoved) {
                 if (this.dragKey == 3) {
-                    this.suppressContextMenu = true;
-                }
-                else {
-                    this.suppressClick = true;
+                    this.shouldSuppressContextMenu = true;
+                } else {
+                    this.shouldSuppressClick = true;
                 }
                 this.cancelEvent(e);
                 return false;
             }
         }
+
         return true;
     },
 
-    click: function (e) {
-        var img = $(e.target);
-        if (img && img.is('img')) {
-            if (this.isDragKey(e)) {
-                // Suppress any click throughs if using LMB as drag button.
-                if (this.dragKey == 1 && this.suppressClick) {
-                    this.cancelEvent(e);
-                    this.suppressClick = false;
-                    return false;
-                }
+    click(e) {
+        if (this.isDragKey(e)) {
+            // Suppress any click throughs if using LMB as drag button.
+            if (this.dragKey == 1 && this.shouldSuppressClick) {
+                this.cancelEvent(e);
+                this.shouldSuppressClick = false;
+                return false;
             }
-            // else if( ... other stuff?
         }
+
         return true;
     },
 
-    // Store the original image size, before we start resizing.
-    storeOriginal: function (img, n) {
-        if (!n.originalWidth) {
-            n.originalWidth = img.width();
-            n.originalHeight = img.height();
-        }
+    /**
+     * Begin restoring the media element to its original state.
+     *
+     * @param {HTMLElement} mediaElement
+     */
+    async restore(mediaElement) {
+        var currentWidth = `${getMediaWidth(mediaElement)}px`;
+        var currentHeight = `${getMediaHeight(mediaElement)}px`;
+        var originalWidth = `${mediaElement.dataset.originalWidth}px`;
+        var originalHeight = `${mediaElement.dataset.originalHeight}px`;
+        delete mediaElement.dataset.originalWidth;
+        delete mediaElement.dataset.originalHeight;
+
+        mediaElement.classList.add('imageResizerAnimating');
+        await mediaElement.animate({
+            width: [currentWidth, originalWidth],
+            height: [currentHeight, originalHeight]
+        }, { duration: 500, easing: 'ease-out', iterations: 1 }).finished;
+
+        mediaElement.classList.remove('imageResizerAnimating');
+        mediaElement.classList.remove('imageResizerChangedClass');
+
+        mediaElement.style.width = originalWidth;
+        mediaElement.style.height = originalHeight;
+
+        delete mediaElement.dataset.originalStyleWidth;
+        delete mediaElement.dataset.originalStyleHeight;
     },
 
-    // Try to restore the image to its original size.
-    restoreOriginal: function (img, n) {
-        if (n.originalWidth) {
-            this.restoredImage = img;
-            n.imageResizerAnimating = true;
-            img.animate({ "width": n.originalWidth, "height": n.originalHeight }, "slow", this._animFinish);
-            n.originalWidth = null;
-            n.originalHeight = null;
-            return true;
-        }
-        return false;
-    },
-
-    // Dragging has started on said image.
-    startScaling: function (img) {
+    /**
+     * @param {HTMLElement} mediaElement
+     */
+    startScaling(mediaElement) {
+        this.isResizingActive = true;
+        this.activeMediaElement = mediaElement;
         this.scrollScaler = 0.0;
-        this.scaling = true;
-        this.moved = false;
-        this.scalingImage = img;
+        this.hasMouseMoved = false;
 
         // Bypasses CSS:Width:... !important;
-        if (!img.attr('width'))
-            img.attr('width', 'inherit');
+        if (!mediaElement.hasAttribute('width')) {
+            mediaElement.setAttribute('width', 'inherit');
+        }
 
-        if (!img.attr('height'))
-            img.attr('height', 'inherit');
+        if (!mediaElement.hasAttribute('height')) {
+            mediaElement.setAttribute('height', 'inherit');
+        }
     },
 
-    // Dragging has stopped on said image.
-    stopScaling: function (img) {
-        this.scaling = false;
-        this.scalingImage = null;
-        img.removeClass('imageResizerActiveClass');
+    /**
+     * @param {HTMLElement} mediaElement
+     */
+    stopScaling(mediaElement) {
+        this.isResizingActive = false;
+        this.activeMediaElement = null;
+
+        mediaElement.classList.remove('imageResizerActiveClass');
 
         if (preferences.stopResizingOnMouseLeave) {
-            $(window).unbind('mousemove', this._mouseMoveContext);
+            window.removeEventListener('mousemove', this._mouseMoveContext);
         } else {
-            img.unbind('mousemove', this._mouseMoveContext)
-        };
-        img.unbind('mouseout', this._mouseOutContext);
-        $(document).unbind('DOMMouseScroll', this._mouseScrollContext);
-    },
-
-    // Executed as soon when an image is resized.
-    _fixImage: function (img) {
-        if (img.css('position') == 'static') {
-            img.css('position', 'relative');
+            mediaElement.removeEventListener('mousemove', this._mouseMoveContext);
         }
-        img.addClass('imageResizerChangedClass');
+        mediaElement.removeEventListener('mouseout', this._mouseOutContext);
+        document.removeEventListener('DOMMouseScroll', this._mouseScrollContext);
     },
-
-    // When restoring the image's animation is finished.
-    _animFinish: function () {
-        // NOTE: this referes to the imageElement not this object!
-        this.imageResizerAnimating = false;
-        $(this).removeClass('imageResizerChangedClass');
-    },
-
-    // Apply a brief title(due mouse button swap) on dragging, but keep the old title.
-    hover: function (e) {
-        var img = $(e.target);
-        if (img == null || !img.is('img') || !this.validImage(img)) {
-            return;
-        }
-
-        // Deprecated, placeholder for later
-    },
-
-    // Undo the title modification, in-case other js/mods read the title.
-    unhover: function (e) {
-        var img = $(e.target);
-        if (!img.is('img') || !this.validImage(img)) {
-            return;
-        }
-
-        // Deprecated, placeholder for later
-    }
 };
 
 window.addEventListener('mousedown', (e) => {
-    if (e.target.nodeName === 'IMG') {
+    if (e.target instanceof HTMLImageElement) {
         imageResizer.mouseDown.call(imageResizer, e);
+    } else if (e.target.style.position === 'absolute') {
+        // let's try find one underneath of an overlay element
+        var elements = window.document.elementsFromPoint(e.clientX, e.clientY);
+        for (let element of elements) {
+            if (
+                element instanceof HTMLImageElement &&
+                isMediaResizable(element)
+            ) {
+                // console.debug('dispatching the mousedown event to the underlying img element');
+                // imageResizer.mouseDown.call(imageResizer, e);
+                element.dispatchEvent(
+                    new MouseEvent('mousedown', {
+                        relatedTarget: element,
+                        clientX: e.clientX,
+                        clientY: e.clientY,
+                        screenX: e.screenX,
+                        screenY: e.screenY,
+                        movementX: e.movementX,
+                        movementY: e.movementY,
+                        bubbles: true,
+                        button: e.button,
+                        buttons: e.buttons,
+                        which: e.which,
+                        ctrlKey: e.ctrlKey,
+                        altKey: e.altKey,
+                        detail: e.detail,
+                        metaKey: e.metaKey,
+                        shiftKey: e.shiftKey,
+                    })
+                );
+
+                break;
+            }
+        }
     }
 });
 
@@ -433,20 +541,22 @@ window.addEventListener('mouseup', (e) => {
 
 // ContextMenu has to bind at all times, e.g. when mouse leaves an image while the user is holding RMB.
 window.addEventListener('contextmenu', (e) => {
-    imageResizer.contextMenu.call(imageResizer, e);
+    imageResizer.handleContextMenuEvent.call(imageResizer, e);
 });
 
 window.addEventListener('click', (e) => {
-    if (e.target.nodeName === 'IMG') {
+    if (e.target instanceof HTMLImageElement) {
         imageResizer.click.call(imageResizer, e);
     }
 });
 
 if (typeof browser !== 'undefined') {
-    function updatePrefs(res) {
+    const updatePrefs = res => {
         preferences = Object.assign(preferences, res.preferences);
         imageResizer.dragKey = preferences.mouseDragButton ? 3 : 1;
-    }
+    };
+
+    // eslint-disable-next-line no-undef
     browser.storage.sync.get('preferences').then(updatePrefs);
 
     // FIXME: Web-extension context error!

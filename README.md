@@ -1,12 +1,12 @@
-Image Resizer/Scaler
-=====
-Copyright 2012-2017 Eliot van Uytfanghe
+# Image Resizer
 
-Image Resizer is an webextension for Firefox, adding the ability to resize images by simply dragging the image!
-You can try the latest available public or test build from: https://addons.mozilla.org/en-US/firefox/addon/image-resizer/versions/
+Copyright 2012-2023 Eliot van Uytfanghe
 
-License
-=====
+Image Resizer is a webextension for Firefox, adding the ability to resize images by simply dragging the image!
+You can try the latest available public or test build from: <https://addons.mozilla.org/en-US/firefox/addon/image-resizer/versions/>
+
+## License
+
 Image Resizer/Scaler is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
